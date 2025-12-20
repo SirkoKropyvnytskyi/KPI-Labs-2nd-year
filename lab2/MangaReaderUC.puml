@@ -1,0 +1,43 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor Guest
+actor "Reader\n(Registered User)" as Reader
+actor Admin
+
+Guest <|-- Reader
+
+rectangle "Manga Reader System" {
+    usecase "Search manga" as UC_Search
+    usecase "Filter by genre" as UC_Filter
+    usecase "Read chapter" as UC_Read
+    usecase "Load Manga Page Images" as UC_LoadImages
+    usecase "Register/Login" as UC_Login
+    usecase "Save reading progress" as UC_SaveProgress
+    usecase "Bookmark chapter" as UC_Bookmark
+    usecase "Manage library" as UC_Library
+    usecase "Upload new chapter" as UC_UpChapter
+    usecase "Upload new manga title" as UC_UpTitle
+    usecase "Manage manga info" as UC_ManageInfo
+    usecase "Remove chapter" as UC_RmChapter
+    usecase "Remove title" as UC_RmTitle
+}
+
+Guest --> UC_Search
+Guest --> UC_Read
+
+Reader --> UC_Login
+Reader --> UC_Bookmark
+Reader --> UC_Library
+
+Admin --> UC_UpChapter
+Admin --> UC_UpTitle
+Admin --> UC_ManageInfo
+Admin --> UC_RmChapter
+Admin --> UC_RmTitle
+
+UC_Filter .> UC_Search : <<extend>>
+UC_Read ..> UC_LoadImages : <<use>>
+UC_SaveProgress .> UC_Read : <<extend>>
+@enduml
