@@ -1,0 +1,66 @@
+@startuml UC3_ReadChapter
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+autonumber
+
+actor "User" as user
+
+box "Frontend" #WhiteSmoke
+    participant "MangaReaderUI" as ui
+end box
+
+box "Backend API" #LightBlue
+    participant "ChapterController" as ctrl
+    participant "MangaService" as service
+end box
+
+box "Database" #LightYellow
+    participant "ChapterRepository" as chap_db
+    participant "PageRepository" as page_db
+end box
+
+title Sequence Diagram: Read Chapter (UC3)
+
+user -> ui: Click on Chapter Link
+activate ui
+
+ui -> ctrl: GET /api/chapters/{chapter_id} \n [Запит на отримання даних розділу]
+activate ctrl
+
+ctrl -> service: getChapterContent(id) \n [Обробити запит читання]
+activate service
+
+service -> chap_db: findById(id) \n [Пошук інформації про розділ в БД]
+activate chap_db
+
+alt Chapter Not Found
+    chap_db --> service: null \n [Розділ не знайдено]
+    service --> ctrl: Error: Not Found
+    ctrl --> ui: 404 Not Found
+    ui -> user: Show "Chapter Unavailable"
+else Chapter Found
+    chap_db --> service: ChapterEntity \n [Повертає назву і номер розділу]
+    deactivate chap_db
+    
+    service -> page_db: findPagesByChapterId(id) \n [Знайти всі картинки цього розділу]
+    activate page_db
+    page_db --> service: List<Page> \n [Список посилань на зображення]
+    deactivate page_db
+    
+    service --> ctrl: ChapterDTO \n [Зібраний пакет: Інфа + Картинки]
+    deactivate service
+    
+    ctrl --> ui: 200 OK (JSON) \n [Дані успішно отримані]
+    deactivate ctrl
+    
+    loop For each image
+        ui -> ui: Render Page Image \n [Відобразити сторінку на екрані]
+    end
+    
+    ui -> user: Show Manga Viewer
+end
+
+deactivate ui
+
+@enduml
