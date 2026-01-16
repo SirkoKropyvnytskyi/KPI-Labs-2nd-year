@@ -1,0 +1,62 @@
+@startuml UC6_SaveProgress
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+autonumber
+
+actor "User" as user
+
+box "Frontend" #WhiteSmoke
+    participant "MangaReaderUI" as ui
+end box
+
+box "Backend API" #LightBlue
+    participant "ProgressController" as ctrl
+    participant "ProgressService" as service
+end box
+
+box "Database" #LightYellow
+    participant "UserProgressRepository" as prog_db
+end box
+
+title Sequence Diagram: Save Reading Progress (UC6)
+
+user -> ui: Scroll to Page X \n [Користувач гортає сторінку]
+activate ui
+
+opt User is Authorized
+    
+    ui -> ctrl: POST /api/progress/update \n [Відправити нову позицію читання]
+    activate ctrl
+    
+    ctrl -> service: updateProgress() \n [Запустити логіку збереження]
+    activate service
+    
+    service -> prog_db: findByUserAndManga() \n [Перевірити, чи читав це раніше]
+    activate prog_db
+    prog_db --> service: UserProgressEntity (or null) \n [Результат пошуку в БД]
+    deactivate prog_db
+    
+    alt Record Exists (Вже читав)
+        service -> prog_db: update(last_read_page) \n [Оновити номер сторінки]
+        activate prog_db
+        prog_db --> service: Success
+        deactivate prog_db
+    else New Record (Читає вперше)
+        service -> prog_db: insert(new_progress) \n [Створити новий запис в історії]
+        activate prog_db
+        prog_db --> service: Success
+        deactivate prog_db
+    end
+    
+    service --> ctrl: Done
+    deactivate service
+    
+    ctrl --> ui: 200 OK \n [Прогрес збережено]
+    deactivate ctrl
+    
+end
+
+deactivate ui
+
+@enduml
