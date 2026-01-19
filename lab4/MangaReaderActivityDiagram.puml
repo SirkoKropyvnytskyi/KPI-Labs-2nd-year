@@ -1,0 +1,57 @@
+@startuml Activity_ReadChapter
+title Activity Diagram: Read Chapter and progress saving, UC 3 and 6
+
+|#Pink|User|
+|#LightBlue|Manga Reader System|
+
+|User|
+start
+:Click "Read Chapter" link;
+
+|Manga Reader System|
+:Receive Request & Check Chapter ID;
+
+if (Chapter Exists in DB?) then (No)
+    :Return Error 404;
+    |User|
+    :See "Chapter Not Found" message;
+    stop
+else (Yes)
+    |Manga Reader System|
+    :Fetch Pages & Prepare Viewer;
+    :Display Manga Interface;
+endif
+
+|User|
+while (Is Chapter Finished?) is (No)
+    |User|
+    :Scroll to Next Page;
+    
+    fork
+        |Manga Reader System|
+        :Update Page Counter (UI);
+    fork again
+        |Manga Reader System|
+        :Process Background Auto-Save;
+        
+        if (User is Authorized?) then (No)
+            :Ignore Save;
+        else (Yes)
+            :Check Existing Progress in DB;
+            
+            if (Record Exists?) then (Yes)
+                :UPDATE Last Read Page;
+            else (No)
+                :INSERT New Progress Record;
+            endif
+        endif
+    end fork
+endwhile (Yes)
+
+|Manga Reader System|
+:Show "End of Chapter" Screen;
+
+|User|
+stop
+
+@enduml
